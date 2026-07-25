@@ -10,13 +10,14 @@ import {
 } from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Animated, Text, View } from 'react-native';
 
 interface ExtraMarker {
   coordinate: { latitude: number; longitude: number };
   title?: string;
   description?: string;
   pinColor?: string;
+  live?: boolean;
 }
 
 interface Props {
@@ -26,6 +27,30 @@ interface Props {
   routeCoordinates?: { latitude: number; longitude: number }[];
   onLocationUpdate?: (coords: LocationCoords) => void;
   userLocationLabel?: string;
+}
+function PulsingRing({ color }: { color: string }) {
+  const scale = useRef(new Animated.Value(0.6)).current;
+  const opacity = useRef(new Animated.Value(0.7)).current;
+
+  useEffect(() => {
+    scale.setValue(0.6);
+    opacity.setValue(0.7);
+    const loop = Animated.loop(
+      Animated.parallel([
+        Animated.timing(scale, { toValue: 2.4, duration: 1400, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0, duration: 1400, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.pinRing, { backgroundColor: color, transform: [{ scale }], opacity }]}
+    />
+  );
 }
 
 export default forwardRef<any, Props>(function BaseMap(
@@ -149,12 +174,18 @@ export default forwardRef<any, Props>(function BaseMap(
         {extraMarkers.map((m, i) => (
           <Marker key={i} lngLat={[m.coordinate.longitude, m.coordinate.latitude]}>
             <View style={styles.markerWrap}>
-              <View style={[styles.pin, { backgroundColor: m.pinColor ?? '#3B82F6' }]} />
-              {m.title && <Text style={styles.markerLabel}>{m.title}</Text>}
+              <View style={styles.pinContainer}>
+                {m.live && <PulsingRing color={m.pinColor ?? '#3B82F6'} />}
+                <View style={[styles.pin, { backgroundColor: m.pinColor ?? '#3B82F6' }]} />
+              </View>
+              {m.title && (
+                <Text style={[styles.markerLabel, m.live && styles.markerLabelLive]}>
+                  {m.title}
+                </Text>
+              )}
             </View>
           </Marker>
         ))}
-
         {routeCoordinates.length > 0 && (
           <GeoJSONSource id="routeSource" data={routeGeoJSON}>
             <Layer

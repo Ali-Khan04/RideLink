@@ -44,4 +44,19 @@ export const styles = StyleSheet.create({
     borderRadius: 6,
     overflow: 'hidden',
   },
+  pinContainer: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinRing: {
+    position: 'absolute',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+  },
+  markerLabelLive: {
+    backgroundColor: 'rgba(37, 99, 235, 0.9)',
+  },
 });
