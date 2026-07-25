@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
 import { COLORS } from '@/constants/theme';
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
@@ -29,5 +29,19 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 2,
     borderColor: '#fff',
+  },
+  markerWrap: {
+    alignItems: 'center',
+  },
+  markerLabel: {
+    marginTop: 4,
+    backgroundColor: 'rgba(17, 24, 39, 0.85)',
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
 });

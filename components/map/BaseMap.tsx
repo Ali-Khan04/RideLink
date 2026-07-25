@@ -1,7 +1,6 @@
 import { DEFAULT_REGION, DEFAULT_ZOOM_LEVEL, MAP_STYLE } from '@/constants/mapConfig';
 import { styles } from '@/styles/mapStyles';
 import { LocationCoords } from '@/types/Location';
-import * as Location from 'expo-location';
 import {
   Camera,
   GeoJSONSource,
@@ -9,6 +8,7 @@ import {
   Map as MLMap,
   Marker,
 } from '@maplibre/maplibre-react-native';
+import * as Location from 'expo-location';
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
@@ -25,10 +25,18 @@ interface Props {
   showUserLocation?: boolean;
   routeCoordinates?: { latitude: number; longitude: number }[];
   onLocationUpdate?: (coords: LocationCoords) => void;
+  userLocationLabel?: string;
 }
 
 export default forwardRef<any, Props>(function BaseMap(
-  { onPress, extraMarkers = [], showUserLocation = true, routeCoordinates = [], onLocationUpdate },
+  {
+    onPress,
+    extraMarkers = [],
+    showUserLocation = true,
+    routeCoordinates = [],
+    onLocationUpdate,
+    userLocationLabel,
+  },
   ref
 ) {
   const [location, setLocation] = useState<LocationCoords | null>(null);
@@ -131,13 +139,19 @@ export default forwardRef<any, Props>(function BaseMap(
 
         {location && showUserLocation && (
           <Marker lngLat={[location.longitude, location.latitude]}>
-            <View style={styles.userDot} />
+            <View style={styles.markerWrap}>
+              <View style={styles.userDot} />
+              {userLocationLabel && <Text style={styles.markerLabel}>{userLocationLabel}</Text>}
+            </View>
           </Marker>
         )}
 
         {extraMarkers.map((m, i) => (
           <Marker key={i} lngLat={[m.coordinate.longitude, m.coordinate.latitude]}>
-            <View style={[styles.pin, { backgroundColor: m.pinColor ?? '#3B82F6' }]} />
+            <View style={styles.markerWrap}>
+              <View style={[styles.pin, { backgroundColor: m.pinColor ?? '#3B82F6' }]} />
+              {m.title && <Text style={styles.markerLabel}>{m.title}</Text>}
+            </View>
           </Marker>
         ))}
 
