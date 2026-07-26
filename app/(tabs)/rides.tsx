@@ -98,9 +98,10 @@ export default function RidesScreen() {
 
   if (isDriverMode && showCreateForm) {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, backgroundColor: COLORS.background }}>
         <Pressable style={styles.backBtn} onPress={() => setShowCreateForm(false)}>
-          <Text style={styles.backText}>← Back to My Rides</Text>
+          <Ionicons name="arrow-back" size={16} color={COLORS.primary} />
+          <Text style={styles.backText}>Back to My Rides</Text>
         </Pressable>
         <CreateRideForm
           onRideCreated={() => {
@@ -115,13 +116,24 @@ export default function RidesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{isDriverMode ? 'My Rides' : 'Available Rides'}</Text>
+        <View>
+          <Text style={styles.title}>{isDriverMode ? 'My Rides' : 'Available Rides'}</Text>
+          <Text style={styles.subtitle}>
+            {isDriverMode
+              ? `${rides.length} ride${rides.length === 1 ? '' : 's'} posted`
+              : `${rides.length} ride${rides.length === 1 ? '' : 's'} nearby`}
+          </Text>
+        </View>
         {isDriverMode &&
           (hasActiveRide ? (
-            <Text style={styles.activeRideText}>Cancel current ride to post a new one</Text>
+            <View style={styles.lockedPill}>
+              <Ionicons name="lock-closed-outline" size={13} color={COLORS.textSecondary} />
+              <Text style={styles.activeRideText}>Ride active</Text>
+            </View>
           ) : (
             <Pressable style={styles.createBtn} onPress={() => setShowCreateForm(true)}>
-              <Text style={styles.createBtnText}>+ New Ride</Text>
+              <Ionicons name="add" size={16} color={COLORS.white} />
+              <Text style={styles.createBtnText}>New Ride</Text>
             </Pressable>
           ))}
       </View>
@@ -139,7 +151,9 @@ export default function RidesScreen() {
                 style={styles.driverBanner}
                 onPress={() => router.push('/(tabs)/profiles/driverProfile')}
               >
-                <Ionicons name="car-sport-outline" size={20} color={COLORS.primary} />
+                <View style={styles.driverBannerIcon}>
+                  <Ionicons name="car-sport-outline" size={20} color={COLORS.primary} />
+                </View>
                 <View style={styles.driverBannerText}>
                   <Text style={styles.driverBannerTitle}>Want to offer rides?</Text>
                   <Text style={styles.driverBannerDesc}>
@@ -159,9 +173,16 @@ export default function RidesScreen() {
             />
           )}
           ListEmptyComponent={
-            <Text style={styles.empty}>
-              {isDriverMode ? 'No rides posted yet.' : 'No rides available right now.'}
-            </Text>
+            <View style={styles.emptyState}>
+              <Ionicons
+                name={isDriverMode ? 'car-sport-outline' : 'search-outline'}
+                size={32}
+                color={COLORS.textSecondary}
+              />
+              <Text style={styles.empty}>
+                {isDriverMode ? 'No rides posted yet.' : 'No rides available right now.'}
+              </Text>
+            </View>
           }
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
@@ -185,39 +206,70 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: SPACING.md,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.xl + SPACING.md,
   },
   title: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: COLORS.textPrimary,
   },
+  subtitle: {
+    fontSize: FONT_SIZES.sm - 1,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
   createBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: COLORS.primary,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.sm,
-    borderRadius: 8,
+    borderRadius: 12,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   createBtnText: {
     color: COLORS.white,
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: FONT_SIZES.sm,
+  },
+  lockedPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
   list: {
     padding: SPACING.md,
-    gap: SPACING.sm,
+    paddingTop: 0,
   },
   empty: {
     textAlign: 'center',
     color: COLORS.textSecondary,
-    marginTop: SPACING.xl,
     fontSize: FONT_SIZES.md,
   },
+  emptyState: {
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginTop: SPACING.xl,
+  },
   backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     padding: SPACING.md,
-    paddingTop: SPACING.lg,
+    paddingTop: SPACING.xl + SPACING.md,
   },
   backText: {
     color: COLORS.primary,
@@ -229,11 +281,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.primary,
     padding: SPACING.md,
     marginBottom: SPACING.md,
+  },
+  driverBannerIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   driverBannerText: {
     flex: 1,
@@ -249,8 +309,8 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   activeRideText: {
-    fontSize: FONT_SIZES.sm,
+    fontSize: FONT_SIZES.sm - 1,
     color: COLORS.textSecondary,
-    fontStyle: 'italic',
+    fontWeight: '600',
   },
 });

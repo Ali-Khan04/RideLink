@@ -1,12 +1,9 @@
-import { View, TextInput, Pressable, Text } from 'react-native';
 import { COLORS } from '@/constants/theme';
 import { studentProfileStyles as styles } from '@/styles/studentProfileStyles';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
-type FormData = {
-  full_name: string;
-  university_name: string;
-  phone: string;
-};
+type FormData = { full_name: string; university_name: string; phone: string };
 
 type Props = {
   formData: FormData;
@@ -17,40 +14,68 @@ type Props = {
 
 export default function StudentProfileForm({ formData, onChange, onSave, onCancel }: Props) {
   return (
-    <View style={styles.editCard}>
-      <TextInput
-        style={[styles.input, styles.inputFirst]}
-        value={formData.full_name}
-        onChangeText={(userInput) => onChange('full_name', userInput)}
-        placeholder="Full name"
-        placeholderTextColor={COLORS.textSecondary}
-      />
+    <View style={styles.card}>
+      <View style={styles.headerBanner}>
+        <View style={styles.avatar}>
+          <Ionicons name="create-outline" size={28} color={COLORS.white} />
+        </View>
+        <Text style={styles.heading}>Edit Student Profile</Text>
+      </View>
 
-      <TextInput
-        style={styles.input}
-        value={formData.university_name}
-        onChangeText={(userInput) => onChange('university_name', userInput)}
-        placeholder="University"
-        placeholderTextColor={COLORS.textSecondary}
-      />
+      <View style={styles.formBody}>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Full Name</Text>
+          <View style={styles.inputWrap}>
+            <Ionicons name="person-outline" size={18} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.input}
+              value={formData.full_name}
+              onChangeText={(t) => onChange('full_name', t)}
+              placeholder="Full name"
+              placeholderTextColor={COLORS.textSecondary}
+            />
+          </View>
+        </View>
 
-      <TextInput
-        style={styles.input}
-        value={formData.phone}
-        onChangeText={(userInput) => onChange('phone', userInput)}
-        placeholder="Phone"
-        placeholderTextColor={COLORS.textSecondary}
-        keyboardType="phone-pad"
-      />
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>University</Text>
+          <View style={styles.inputWrap}>
+            <Ionicons name="school-outline" size={18} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.input}
+              value={formData.university_name}
+              onChangeText={(t) => onChange('university_name', t)}
+              placeholder="University"
+              placeholderTextColor={COLORS.textSecondary}
+            />
+          </View>
+        </View>
 
-      <View style={styles.buttonRow}>
-        <Pressable style={styles.cancelBtn} onPress={onCancel}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </Pressable>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Phone</Text>
+          <View style={styles.inputWrap}>
+            <Ionicons name="call-outline" size={18} color={COLORS.textSecondary} />
+            <TextInput
+              style={styles.input}
+              value={formData.phone}
+              onChangeText={(t) => onChange('phone', t)}
+              placeholder="Phone"
+              placeholderTextColor={COLORS.textSecondary}
+              keyboardType="phone-pad"
+            />
+          </View>
+        </View>
 
-        <Pressable style={styles.saveBtn} onPress={onSave}>
-          <Text style={styles.saveText}>Save</Text>
-        </Pressable>
+        <View style={styles.buttonRow}>
+          <Pressable style={[styles.button, styles.cancelButton]} onPress={onCancel}>
+            <Ionicons name="close" size={16} color={COLORS.textSecondary} />
+            <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
+          </Pressable>
+          <Pressable style={[styles.button, styles.saveButton]} onPress={onSave}>
+            <Ionicons name="checkmark" size={16} color={COLORS.white} />
+            <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );

@@ -48,7 +48,7 @@ export default function HomeScreen() {
         <View style={styles.headerActions}>
           <SwitchModeButton />
           <Pressable onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={22} color={COLORS.textSecondary} />
+            <Ionicons name="log-out-outline" size={20} color={COLORS.textSecondary} />
           </Pressable>
         </View>
       </View>
@@ -220,7 +220,9 @@ function DriverDashboard({ userId }: { userId: string }) {
   return (
     <View style={styles.dashContainer}>
       <Pressable style={styles.statCard} onPress={() => setModalVisible(true)}>
-        <Ionicons name="people-outline" size={28} color={COLORS.primary} />
+        <View style={styles.statIconBadge}>
+          <Ionicons name="people-outline" size={26} color={COLORS.primary} />
+        </View>
         <Text style={styles.statNumber}>{pendingCount}</Text>
         <Text style={styles.statLabel}>Pending Requests</Text>
         <Text style={styles.statHint}>Tap to review</Text>
@@ -229,11 +231,23 @@ function DriverDashboard({ userId }: { userId: string }) {
       <Text style={styles.sectionTitle}>Your Next Ride</Text>
       {activeRide ? (
         <View style={styles.rideCard}>
-          <Row label="Departure" value={new Date(activeRide.departure_time).toLocaleString()} />
-          <Row label="Seats left" value={String(activeRide.seats_available)} />
-          <Row label="Status" value={activeRide.status} />
+          <View style={styles.rideCardTop}>
+            <Row label="Departure" value={new Date(activeRide.departure_time).toLocaleString()} />
+            <Row label="Seats left" value={String(activeRide.seats_available)} />
+            <View style={[styles.row, styles.rowLast]}>
+              <Text style={styles.rowLabel}>Status</Text>
+              <StatusPill status={activeRide.status} />
+            </View>
+          </View>
           <Pressable style={styles.actionBtn} onPress={() => router.push('/(tabs)/rides')}>
             <Text style={styles.actionBtnText}>Manage Ride →</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.actionBtn, styles.mapBtn]}
+            onPress={() => router.push('/(tabs)/map')}
+          >
+            <Ionicons name="navigate-outline" size={15} color={COLORS.white} />
+            <Text style={styles.actionBtnText}>Track Students on Map</Text>
           </Pressable>
           {/* Cancell and Complete Button  */}
           <View style={styles.rideActions}>
@@ -257,6 +271,7 @@ function DriverDashboard({ userId }: { userId: string }) {
         </View>
       ) : (
         <View style={styles.emptyCard}>
+          <Ionicons name="car-sport-outline" size={28} color={COLORS.textSecondary} />
           <Text style={styles.emptyText}>No active ride posted.</Text>
           <Pressable style={styles.actionBtn} onPress={() => router.push('/(tabs)/rides')}>
             <Text style={styles.actionBtnText}>Post a Ride →</Text>
@@ -379,20 +394,20 @@ function StudentDashboard({ userId }: { userId: string }) {
 
       {activeRequest && ride ? (
         <View style={styles.rideCard}>
-          <StatusBadge status={activeRequest.status} />
-          <Row label="Departure" value={new Date(ride.departure_time).toLocaleString()} />
-          <Row label="Seats requested" value={String(activeRequest.seats_requested)} />
+          <View style={styles.rideCardTop}>
+            <View style={styles.badgeRow}>
+              <StatusPill status={activeRequest.status} />
+            </View>
+            <Row label="Departure" value={new Date(ride.departure_time).toLocaleString()} />
+            <View style={[styles.row, styles.rowLast]}>
+              <Text style={styles.rowLabel}>Seats requested</Text>
+              <Text style={styles.rowValue}>{activeRequest.seats_requested}</Text>
+            </View>
+          </View>
           {activeRequest.status === 'accepted' && (
-            <Pressable
-              style={styles.actionBtn}
-              onPress={() =>
-                router.push({
-                  pathname: '/(tabs)/map',
-                  params: { driverId: ride.driver_id },
-                })
-              }
-            >
-              <Text style={styles.actionBtnText}>Track Driver on Map →</Text>
+            <Pressable style={styles.actionBtn} onPress={() => router.push('/(tabs)/map')}>
+              <Ionicons name="navigate-outline" size={15} color={COLORS.white} />
+              <Text style={styles.actionBtnText}>Track Driver on Map</Text>
             </Pressable>
           )}
           {/*cancel button */}
@@ -409,6 +424,7 @@ function StudentDashboard({ userId }: { userId: string }) {
         </View>
       ) : (
         <View style={styles.emptyCard}>
+          <Ionicons name="search-outline" size={28} color={COLORS.textSecondary} />
           <Text style={styles.emptyText}>No active ride request.</Text>
           <Pressable style={styles.actionBtn} onPress={() => router.push('/(tabs)/rides')}>
             <Text style={styles.actionBtnText}>Browse Rides →</Text>
@@ -428,11 +444,15 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
+function StatusPill({ status }: { status: string }) {
   const colors: Record<string, { bg: string; text: string }> = {
+    active: { bg: '#D1FAE5', text: '#065F46' },
     pending: { bg: '#FEF3C7', text: '#92400E' },
     accepted: { bg: '#D1FAE5', text: '#065F46' },
     rejected: { bg: '#FEE2E2', text: '#991B1B' },
+    cancelled: { bg: '#FEE2E2', text: '#991B1B' },
+    completed: { bg: '#DBEAFE', text: '#1D4ED8' },
+    full: { bg: '#EDE9FE', text: '#5B21B6' },
   };
   const c = colors[status] ?? colors.pending;
   return (
@@ -444,7 +464,7 @@ function StatusBadge({ status }: { status: string }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
-  content: { padding: SPACING.md, paddingTop: SPACING.lg },
+  content: { padding: SPACING.md, paddingTop: SPACING.xl + SPACING.md, paddingBottom: SPACING.xl },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -452,30 +472,50 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   greeting: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
     color: COLORS.textPrimary,
   },
   subGreeting: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textSecondary,
-    marginTop: 2,
+    marginTop: 3,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
   },
-  logoutBtn: { padding: SPACING.xs },
+  logoutBtn: {
+    padding: SPACING.xs + 2,
+    borderRadius: 999,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
   dashContainer: { gap: SPACING.md },
   statCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: SPACING.lg,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.xs,
+    gap: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statIconBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs,
   },
   statNumber: {
     fontSize: 36,
@@ -490,18 +530,26 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.md,
     fontWeight: '700',
     color: COLORS.textPrimary,
+    marginBottom: -SPACING.xs,
   },
   rideCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
     gap: SPACING.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
+  rideCardTop: { gap: 2 },
+  badgeRow: { flexDirection: 'row', marginBottom: SPACING.xs },
   emptyCard: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -509,32 +557,44 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   emptyText: { color: COLORS.textSecondary, fontSize: FONT_SIZES.sm },
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
-  rowLabel: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary },
-  rowValue: { fontSize: FONT_SIZES.sm, color: COLORS.textPrimary, fontWeight: '500' },
-  actionBtn: {
-    backgroundColor: COLORS.primary,
-    padding: SPACING.sm,
-    borderRadius: 8,
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: SPACING.xs + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
   },
-  actionBtnText: { color: COLORS.white, fontWeight: '600', fontSize: FONT_SIZES.sm },
+  rowLast: { borderBottomWidth: 0 },
+  rowLabel: { fontSize: FONT_SIZES.sm, color: COLORS.textSecondary },
+  rowValue: { fontSize: FONT_SIZES.sm, color: COLORS.textPrimary, fontWeight: '600' },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: COLORS.primary,
+    padding: SPACING.sm + 2,
+    borderRadius: 12,
+  },
+  mapBtn: { backgroundColor: '#1D4ED8' },
+  actionBtnText: { color: COLORS.white, fontWeight: '700', fontSize: FONT_SIZES.sm },
   badge: {
     alignSelf: 'flex-start',
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
     borderRadius: 99,
   },
-  badgeText: { fontSize: FONT_SIZES.sm, fontWeight: '700' },
+  badgeText: { fontSize: FONT_SIZES.sm - 2, fontWeight: '700', letterSpacing: 0.5 },
   statHint: {
     fontSize: FONT_SIZES.sm - 1,
     color: COLORS.primary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   rideActions: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    marginTop: SPACING.xs,
+    marginTop: 2,
   },
   completeBtn: {
     flex: 1,
@@ -543,13 +603,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     padding: SPACING.sm,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
   },
   completeBtnText: {
     color: '#16A34A',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: FONT_SIZES.sm,
   },
   cancelBtn: {
@@ -559,13 +620,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     padding: SPACING.sm,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#DC2626',
+    backgroundColor: '#FEF2F2',
   },
   cancelBtnText: {
     color: '#DC2626',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: FONT_SIZES.sm,
   },
   btnDisabled: {

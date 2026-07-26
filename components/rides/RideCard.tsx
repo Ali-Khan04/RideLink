@@ -1,6 +1,6 @@
 import { COLORS, FONT_SIZES, SPACING } from '@/constants/theme';
 import { Ride } from '@/types/Profiles';
-//import { getLocationLabel } from "@/utils/locationLabelCache";
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface Props {
@@ -10,29 +10,13 @@ interface Props {
   disabled?: boolean;
   alreadyRequested?: boolean;
 }
-/*
-const formatCoordinates = (lat: number, lng: number) => `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 
-const reverseGeocode = async (lat: number, lng: number) => {
-  const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
-
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-    {
-      headers: {
-        Accept: "application/json",
-      },
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch location name");
-  }
-
-  const data = await response.json();
-  const label = data.display_name || formatCoordinates(lat, lng);
-  return label;
-};*/
+const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  active: { bg: '#D1FAE5', text: '#065F46' },
+  full: { bg: '#FEF3C7', text: '#92400E' },
+  completed: { bg: '#E5E7EB', text: '#374151' },
+  cancelled: { bg: '#FEE2E2', text: '#991B1B' },
+};
 
 export default function RideCard({
   ride,
@@ -42,88 +26,41 @@ export default function RideCard({
   alreadyRequested,
 }: Props) {
   const departure = new Date(ride.departure_time).toLocaleString();
-
-  // Read from shared cache at render time
-  // CreateRideForm.handleSubmit calls setLocationLabel before inserting to Supabase,
-  // so for the driver's own freshly posted ride these will already be populated
-  /*const cachedPickup = getLocationLabel(ride.pickup_lat, ride.pickup_lng);
-  const cachedDestination = getLocationLabel(
-    ride.destination_lat,
-    ride.destination_lng,
-  );
-
-  // Initial state uses the cached label if available, so the card
-  // renders human-readable text immediately instead of coordinates
-  const [pickupLabel, setPickupLabel] = useState(
-     formatCoordinates(ride.pickup_lat, ride.pickup_lng),
-  );
-  const [destinationLabel, setDestinationLabel] = useState(
-    
-      formatCoordinates(ride.destination_lat, ride.destination_lng),
-  );
-  const pickupLabel = formatCoordinates(ride.pickup_lat, ride.pickup_lng);
-  const destinationLabel = formatCoordinates(ride.destination_lat, ride.destination_lng);
-
-  useEffect(() => {
-    // skip the Nominatim network call entirely if both labels are already cached
-    //if (cachedPickup && cachedDestination) return;
-
-    //let mounted = true;
-
-    const loadLocationLabels = async () => {
-      try {
-        const [pickupName, destinationName] = await Promise.all([
-          // Percoord cache check for only reverse geocode whichever
-          // coord is missing from cache, not both
-          cachedPickup
-            ? Promise.resolve(cachedPickup)
-            : reverseGeocode(ride.pickup_lat, ride.pickup_lng),
-          cachedDestination
-            ? Promise.resolve(cachedDestination)
-            : reverseGeocode(ride.destination_lat, ride.destination_lng),
-        ]);
-
-        if (!mounted) return;
-        setPickupLabel(pickupName);
-        setDestinationLabel(destinationName);
-      } catch {
-        if (!mounted) return;
-        setPickupLabel(formatCoordinates(ride.pickup_lat, ride.pickup_lng));
-        setDestinationLabel(
-          formatCoordinates(ride.destination_lat, ride.destination_lng),
-        );
-      }
-    };
-
-    loadLocationLabels();
-    return () => {
-      mounted = false;
-    };
-  }, [
-    
-  ]);*/
+  const statusColor = STATUS_COLORS[ride.status] ?? STATUS_COLORS.active;
 
   return (
     <View style={styles.card}>
-      <View style={styles.row}>
-        <Text style={styles.label}>Pickup</Text>
-        <Text style={styles.value}>{ride.pickup_label}</Text>
+      <View style={styles.headerRow}>
+        <View style={styles.routeBlock}>
+          <View style={styles.routeRow}>
+            <View style={styles.routeDot} />
+            <Text style={styles.routeText} numberOfLines={1}>
+              {ride.pickup_label}
+            </Text>
+          </View>
+          <View style={styles.routeConnector} />
+          <View style={styles.routeRow}>
+            <Ionicons name="location" size={13} color="#EF4444" />
+            <Text style={styles.routeText} numberOfLines={1}>
+              {ride.destination_label}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.badge, { backgroundColor: statusColor.bg }]}>
+          <Text style={[styles.badgeText, { color: statusColor.text }]}>{ride.status}</Text>
+        </View>
       </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Destination</Text>
-        <Text style={styles.value}>{ride.destination_label}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Departure</Text>
-        <Text style={styles.value}>{departure}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Seats Left</Text>
-        <Text style={styles.value}>{ride.seats_available}</Text>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Status</Text>
-        <Text style={[styles.badge, styles[ride.status] ?? styles.active]}>{ride.status}</Text>
+
+      <View style={styles.metaRow}>
+        <View style={styles.metaItem}>
+          <Ionicons name="time-outline" size={14} color={COLORS.textSecondary} />
+          <Text style={styles.metaText}>{departure}</Text>
+        </View>
+        <View style={styles.metaItem}>
+          <Ionicons name="people-outline" size={14} color={COLORS.textSecondary} />
+          <Text style={styles.metaText}>{ride.seats_available} seats left</Text>
+        </View>
       </View>
 
       {actionLabel && onAction && (
@@ -132,57 +69,84 @@ export default function RideCard({
           onPress={() => !alreadyRequested && onAction(ride)}
           disabled={disabled || alreadyRequested}
         >
-          <Text style={styles.buttonText}>{actionLabel}</Text>
+          <Text style={styles.buttonText}>
+            {alreadyRequested ? 'Already Requested' : actionLabel}
+          </Text>
         </Pressable>
       )}
     </View>
   );
 }
-// will be refactored later
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: SPACING.md,
     marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.xs,
+    gap: SPACING.sm,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  row: {
+  headerRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    gap: SPACING.sm,
   },
-  label: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textSecondary,
+  routeBlock: { flex: 1 },
+  routeRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.xs },
+  routeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.primary,
+    marginHorizontal: 2.5,
   },
-  value: {
+  routeConnector: {
+    width: 1,
+    height: 10,
+    marginLeft: 6.5,
+    borderLeftWidth: 1,
+    borderLeftColor: COLORS.border,
+    borderStyle: 'dashed',
+  },
+  routeText: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textPrimary,
-    fontWeight: '500',
+    fontWeight: '600',
     flexShrink: 1,
-    textAlign: 'right',
-    marginLeft: SPACING.sm,
   },
   badge: {
     paddingHorizontal: SPACING.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: 99,
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    overflow: 'hidden',
   },
-  active: { backgroundColor: '#D1FAE5', color: '#065F46' },
-  full: { backgroundColor: '#FEF3C7', color: '#92400E' },
-  completed: { backgroundColor: '#E5E7EB', color: '#374151' },
-  cancelled: { backgroundColor: '#FEE2E2', color: '#991B1B' },
+  badgeText: {
+    fontSize: FONT_SIZES.sm - 3,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    paddingTop: SPACING.xs,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  metaText: { fontSize: FONT_SIZES.sm - 1, color: COLORS.textSecondary },
   button: {
-    marginTop: SPACING.sm,
+    marginTop: 2,
     backgroundColor: COLORS.primary,
-    padding: SPACING.sm,
-    borderRadius: 8,
+    padding: SPACING.sm + 2,
+    borderRadius: 12,
     alignItems: 'center',
   },
   buttonDisabled: {
@@ -190,7 +154,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: COLORS.white,
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: FONT_SIZES.sm,
   },
 });
