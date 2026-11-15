@@ -10,9 +10,8 @@
     },
     "preview": {
       "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
+      "environment": "preview",
+      "android": { "buildType": "apk", "gradleCommand": ":app:assembleRelease" }
     },
     "production": {
       "autoIncrement": true
