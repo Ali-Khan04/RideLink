@@ -79,7 +79,8 @@ function DriverDashboard({ userId }: { userId: string }) {
       .from('rides')
       .select('*')
       .eq('driver_id', userId)
-      .eq('status', 'active')
+      // 'full' rides must stay visible, otherwise a driver cannot cancel/complete them
+      .in('status', ['active', 'full'])
       .order('departure_time', { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -174,15 +175,46 @@ function DriverDashboard({ userId }: { userId: string }) {
           style: 'destructive',
           onPress: async () => {
             setCancelling(true);
-            await supabase
+
+            // 1) cancel the ride itself. .select() returns the updated rows so we can
+            //    detect a silent failure (RLS blocks the update without raising an error)
+            const { data: updatedRide, error: rideError } = await supabase
+              .from('rides')
+              .update({ status: 'cancelled' })
+              .eq('id', activeRide.id)
+              .select('id');
+
+            if (rideError || !updatedRide || updatedRide.length === 0) {
+              setCancelling(false);
+              Alert.alert(
+                'Could not cancel ride',
+                rideError?.message ?? 'Update was not permitted.'
+              );
+              return;
+            }
+
+            // 2) reject pending requests, 3) cancel already-accepted ones so those
+            //    students are not stuck with an accepted request on a dead ride
+            const { error: pendingError } = await supabase
               .from('ride_requests')
               .update({ status: 'rejected' })
               .eq('ride_id', activeRide.id)
               .eq('status', 'pending');
 
-            await supabase.from('rides').update({ status: 'cancelled' }).eq('id', activeRide.id);
+            const { error: acceptedError } = await supabase
+              .from('ride_requests')
+              .update({ status: 'cancelled' })
+              .eq('ride_id', activeRide.id)
+              .eq('status', 'accepted');
 
             setCancelling(false);
+            if (pendingError || acceptedError) {
+              Alert.alert(
+                'Ride cancelled',
+                'The ride was cancelled, but some student requests could not be updated: ' +
+                  (pendingError?.message ?? acceptedError?.message)
+              );
+            }
             fetch();
           },
         },
@@ -199,8 +231,22 @@ function DriverDashboard({ userId }: { userId: string }) {
         text: 'Yes',
         onPress: async () => {
           setCancelling(true);
-          await supabase.from('rides').update({ status: 'completed' }).eq('id', activeRide.id);
-          // when ride is completed, all accepted requests should be marked as completed too not cancelled
+          const { data: doneRide, error: completeError } = await supabase
+            .from('rides')
+            .update({ status: 'completed' })
+            .eq('id', activeRide.id)
+            .select('id');
+
+          if (completeError || !doneRide || doneRide.length === 0) {
+            setCancelling(false);
+            Alert.alert(
+              'Could not complete ride',
+              completeError?.message ?? 'Update was not permitted.'
+            );
+            return;
+          }
+          // NOTE: ride_requests has no 'completed' status in the type/DB, so accepted
+          // requests are closed as 'cancelled' (see README/notes).
           await supabase
             .from('ride_requests')
             .update({ status: 'cancelled' })
@@ -311,16 +357,23 @@ function StudentDashboard({ userId }: { userId: string }) {
       .limit(1)
       .maybeSingle();
 
-    setActiveRequest(reqData ?? null);
-
     if (reqData) {
       const { data: rideData } = await supabase
         .from('rides')
         .select('*')
         .eq('id', reqData.ride_id)
         .maybeSingle();
-      setRide(rideData ?? null);
+
+      // if the driver cancelled/completed the ride, this request is no longer active
+      if (!rideData || rideData.status === 'cancelled' || rideData.status === 'completed') {
+        setActiveRequest(null);
+        setRide(null);
+      } else {
+        setActiveRequest(reqData);
+        setRide(rideData);
+      }
     } else {
+      setActiveRequest(null);
       setRide(null);
     }
 
@@ -372,13 +425,22 @@ function StudentDashboard({ userId }: { userId: string }) {
         style: 'destructive',
         onPress: async () => {
           setCancelling(true);
-          const { error } = await supabase
+          const { data: updated, error } = await supabase
             .from('ride_requests')
             .update({ status: 'cancelled' })
-            .eq('id', activeRequest.id);
-          console.log('cancel error:', error);
-          console.log('cancel done, fetching...');
+            .eq('id', activeRequest.id)
+            .eq('student_id', userId)
+            .eq('status', 'pending')
+            .select('id');
           setCancelling(false);
+
+          if (error || !updated || updated.length === 0) {
+            Alert.alert(
+              'Could not cancel request',
+              error?.message ??
+                'The request could not be changed. It may already have been accepted or rejected.'
+            );
+          }
           fetch();
         },
       },

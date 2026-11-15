@@ -55,7 +55,7 @@ export default function RidesScreen() {
       setRides(data as Ride[]);
       // stop drivers from posting multiple active rides
       if (isDriverMode) {
-        setHasActiveRide(data.some((r) => r.status === 'active'));
+        setHasActiveRide(data.some((r) => r.status === 'active' || r.status === 'full'));
       }
     }
     if (!isDriverMode && session?.user?.id) {
